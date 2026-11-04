@@ -4,11 +4,6 @@ variable "aws_region" {
   default     = "eu-north-1"
 }
 
-variable "project_name" {
-  description = "Project name used for resource naming"
-  type        = string
-  default     = "privatebin"
-}
 
 variable "instance_type" {
   description = "EC2 instance type"

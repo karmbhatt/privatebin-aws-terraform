@@ -36,7 +36,7 @@ resource "aws_iam_role_policy" "privatebin_s3" {
         Resource = var.notes_bucket_arn
         Condition = {
           StringLike = {
-            "s3:prefix" = ["${var.notes_prefix}", "${var.notes_prefix}*"]
+            "s3:prefix" = [var.notes_prefix, "${var.notes_prefix}*"]
           }
         }
       },
