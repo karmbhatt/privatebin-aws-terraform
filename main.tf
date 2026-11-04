@@ -45,6 +45,16 @@ resource "aws_s3_bucket_lifecycle_configuration" "privatebin" {
   depends_on = [
     aws_s3_bucket_versioning.privatebin
   ]
+  rule {
+    id     = "abort-incomplete-multipart-uploads"
+    status = "Enabled"
+
+    filter {}
+
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
+  }
 
   rule {
     id     = "expire-old-note-versions"
