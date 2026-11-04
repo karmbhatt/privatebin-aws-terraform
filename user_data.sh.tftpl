@@ -1,0 +1,63 @@
+#!/bin/bash
+set -euxo pipefail
+
+exec > >(tee /var/log/user-data.log | logger -t user-data -s 2>/dev/console) 2>&1
+
+dnf update -y
+dnf install -y docker
+systemctl enable --now docker
+
+mkdir -p /opt/privatebin
+
+cat > /opt/privatebin/conf.php <<'PHP_CONFIG'
+;<?php http_response_code(403); /*
+[main]
+name = "PrivateBin"
+discussion = false
+opendiscussion = false
+password = true
+fileupload = false
+defaultformatter = "plaintext"
+sizelimit = 10000000
+template = "bootstrap5"
+languagedefault = "en"
+qrcode = true
+
+[expire]
+default = "1week"
+
+[traffic]
+limit = 10
+dir = PATH "data"
+
+[purge]
+limit = 300
+batchsize = 10
+
+[model]
+class = "S3Storage"
+
+[model_options]
+region = "${aws_region}"
+version = "latest"
+bucket = "${notes_bucket}"
+prefix = "${notes_prefix}"
+*/
+PHP_CONFIG
+
+chmod 0644 /opt/privatebin/conf.php
+
+docker pull "${container_image}"
+
+docker run -d \
+  --name privatebin \
+  --restart unless-stopped \
+  --read-only \
+  -p 3344:8080 \
+  -v /opt/privatebin/conf.php:/srv/cfg/conf.php:ro \
+  --tmpfs /tmp:nodev,noexec,mode=1777 \
+  --tmpfs /run:nodev,exec,mode=1777 \
+  --tmpfs /var/lib/nginx/tmp:nodev,noexec,mode=1777 \
+  -e AWS_DEFAULT_REGION="${aws_region}" \
+  -e TZ=UTC \
+  "${container_image}"
